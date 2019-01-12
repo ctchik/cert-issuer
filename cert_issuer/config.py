@@ -74,13 +74,18 @@ def add_arguments(p):
                    help='the API token of the blockchain broadcaster you are using. Currently Etherscan only supported.')
 
 
-def get_config():
+def get_config(path = None):
     configure_logger()
-    p = configargparse.getArgumentParser(default_config_files=[os.path.join(PATH, 'conf.ini'),
-                                                               '/etc/cert-issuer/conf.ini'])
+    if not path:
+        config_file_path = os.path.join(PATH, 'conf.ini')
+    else:
+        config_file_path = path
+    configargparse.initArgumentParser(name='issue_conf', default_config_files=[config_file_path])
+    p = configargparse.get_argument_parser('issue_conf')
+    
     add_arguments(p)
     parsed_config, _ = p.parse_known_args()
-
+ 
     if not parsed_config.safe_mode:
         logging.warning('Your app is configured to skip the wifi check when the USB is plugged in. Read the '
                         'documentation to ensure this is what you want, since this is less secure')
