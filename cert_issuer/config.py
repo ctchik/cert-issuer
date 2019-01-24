@@ -75,7 +75,6 @@ def add_arguments(p):
 
 
 def get_config(path = None):
-    configure_logger()
     if not path:
         config_file_path = os.path.join(PATH, 'conf.ini')
     else:
