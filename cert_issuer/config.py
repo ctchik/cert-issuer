@@ -5,6 +5,8 @@ import bitcoin
 import configargparse
 from cert_core import BlockchainType, Chain, chain_to_bitcoin_network, UnknownChainError
 
+import requests
+
 PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(PATH, 'data')
 WORK_PATH = os.path.join(PATH, 'work')
@@ -55,11 +57,13 @@ def add_arguments(p):
     # bitcoin arguments
     p.add_argument('--dust_threshold', default=0.0000275, type=float,
                    help='blockchain dust threshold (in BTC) -- below this 1/3 is fees.')
-    p.add_argument('--tx_fee', default=0.0006, type=float,
+    # don't use fixed tx fee
+    p.add_argument('--tx_fee', default=0, type=float,
                    help='recommended tx fee (in BTC) for inclusion in next block. http://bitcoinexchangerate.org/fees')
     p.add_argument('--batch_size', default=10, type=int,
                    help='Certificate batch size')
-    p.add_argument('--satoshi_per_byte', default=250,
+    p.add_argument('--satoshi_per_byte',
+                    default=requests.get('https://bitcoinfees.earn.com/api/v1/fees/recommended').json()['fastestFee'],
                    type=int, help='Satoshi per byte')
     p.add_argument('--bitcoind', dest='bitcoind', default=False, action='store_true',
                    help='Use bitcoind connectors.')
@@ -73,6 +77,7 @@ def add_arguments(p):
     p.add_argument('--api_token', default=None, type=str,
                    help='the API token of the blockchain broadcaster you are using. Currently Etherscan only supported.')
 
+# recommanded_fee : satoshi per byte
 
 def get_config(path = None):
     if not path:
