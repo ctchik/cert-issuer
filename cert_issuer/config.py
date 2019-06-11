@@ -58,13 +58,11 @@ def add_arguments(p):
     p.add_argument('--dust_threshold', default=0.0000275, type=float,
                    help='blockchain dust threshold (in BTC) -- below this 1/3 is fees.')
     # don't use fixed tx fee
-    p.add_argument('--tx_fee', default=0, type=float,
+    p.add_argument('--tx_fee', default=0.0006, type=float,
                    help='recommended tx fee (in BTC) for inclusion in next block. http://bitcoinexchangerate.org/fees')
     p.add_argument('--batch_size', default=10, type=int,
                    help='Certificate batch size')
-    p.add_argument('--satoshi_per_byte',
-                    default=requests.get('https://bitcoinfees.earn.com/api/v1/fees/recommended').json()['fastestFee'],
-                   type=int, help='Satoshi per byte')
+    p.add_argument('--satoshi_per_byte', default=250, type=int, help='Satoshi per byte')
     p.add_argument('--bitcoind', dest='bitcoind', default=False, action='store_true',
                    help='Use bitcoind connectors.')
     p.add_argument('--no_bitcoind', dest='bitcoind', default=True, action='store_false',
@@ -96,6 +94,12 @@ def get_config(path = None):
 
     # overwrite with enum
     parsed_config.chain = Chain.parse_from_chain(parsed_config.chain)
+
+    # Set the fee to the recommended value (only enabled if the current chain is mainnet)
+    if parsed_config.chain.blockchain_type == BlockchainType.bitcoin:
+        parsed_config.tx_fee = 0
+        parsed_config.satoshi_per_byte = requests.get('https://bitcoinfees.earn.com/api/v1/fees/recommended').json()['fastestFee']
+        # final fee = max(tx_fee, satoshi_per_byte * size)    
 
     # ensure it's a supported chain
     if parsed_config.chain.blockchain_type != BlockchainType.bitcoin and \
