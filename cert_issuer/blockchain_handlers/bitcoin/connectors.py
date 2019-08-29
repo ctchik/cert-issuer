@@ -10,7 +10,7 @@ import bitcoin.rpc
 import requests
 from bitcoin.core import CTransaction
 from cert_core import Chain
-from pycoin.serialize import b2h, b2h_rev, h2b
+from pycoin.serialize import b2h, b2h_rev, h2b, h2b_rev
 from pycoin.services import providers
 from pycoin.services.chain_so import ChainSoProvider
 from pycoin.services.insight import InsightProvider
@@ -79,6 +79,24 @@ class BlockcypherBroadcaster(object):
         logging.error('Error broadcasting the transaction through the Blockcypher API. Error msg: %s', response.text)
         raise BroadcastError(response.text)
 
+    def spendables_for_address(self, address):
+        """
+        Return a list of Spendable objects for the
+        given bitcoin address.
+        """
+        logging.debug('spendables_for_address %s', address)
+        spendables = []
+        url_append = "?unspentOnly=true&token=%s&includeScript=true" % self.api_token
+        url = self.base_url +'/addrs/'+ address + url_append
+        result = json.loads(urlopen(url).read().decode("utf8"))
+        for txn in result.get("txrefs", []):
+            coin_value = txn.get("value")
+            script = h2b(txn.get("script"))
+            previous_hash = h2b_rev(txn.get("tx_hash"))
+            previous_index = txn.get("tx_output_n")
+            spendables.append(Spendable(coin_value, script, previous_hash, previous_index))
+        return spendables
+        
 class BitcoindConnector(object):
     def __init__(self, netcode):
         self.netcode = netcode
